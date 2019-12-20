@@ -1,0 +1,15 @@
+version: '3'
+services:
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - 9090:9090
+    volumes:
+      - ./resources/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./resources:/resources
+    command: 
+    - '--web.enable-lifecycle'
+    - '--config.file=/etc/prometheus/prometheus.yml'
+    
+
