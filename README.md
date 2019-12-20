@@ -2,7 +2,7 @@
 
 In a production setup its never advisable to install monitoring tool on the same infra/platform that is being monitored.
 
-To monitor k8s with Prometheus it must be installed outside of the cluster
+To monitor k8s with Prometheus it must be installed outside of the cluster since if k8s cluster goes down then it leaves the support personnel  in dark to look for problem.
 
 # Setup
 
