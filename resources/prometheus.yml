@@ -51,3 +51,111 @@ scrape_configs:
       regex: (.+)
       target_label: __metrics_path__
       replacement: /api/v1/nodes/${1}/proxy/metrics
+
+  - job_name: 'k8s-pods'
+
+    scheme: https
+
+    bearer_token_file: /resources/user_token
+    tls_config:
+      ca_file: /resources/ca.crt
+
+    kubernetes_sd_configs:
+    - role: pod
+      api_server: https://192.168.99.114:8443
+      bearer_token_file: /resources/user_token
+      tls_config:
+        ca_file: /resources/ca.crt
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - target_label: __address__
+        replacement: 192.168.99.114:8443
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+        regex: ^$
+        replacement: http
+        target_label: __meta_kubernetes_pod_annotation_prometheus_io_scheme
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port]
+        regex: ^$
+        replacement: "8080"
+        target_label: __meta_kubernetes_pod_annotation_prometheus_io_port
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        regex: (.+)
+        replacement: ${1}
+        target_label: __metrics_path__
+      - source_labels:
+        - __meta_kubernetes_namespace
+        - __meta_kubernetes_pod_annotation_prometheus_io_scheme
+        - __meta_kubernetes_pod_name
+        - __meta_kubernetes_pod_annotation_prometheus_io_port
+        - __metrics_path__
+        regex: (.+);(.+);(.+);(.+);(.+)
+        action: replace
+        target_label: __metrics_path__
+        replacement: /api/v1/namespaces/${1}/pods/${2}:${3}:${4}/proxy${5}
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: kubernetes_pod_name
+      - source_labels: [__meta_kubernetes_pod_node_name]
+        target_label: kubernetes_node_name
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: instance
+
+  - job_name: 'k8s-services'
+
+    scheme: https
+
+    bearer_token_file: /resources/user_token
+    tls_config:
+      ca_file: /resources/ca.crt
+
+    kubernetes_sd_configs:
+    - role: service
+      api_server: https://192.168.99.114:8443
+      bearer_token_file: /resources/user_token
+      tls_config:
+        ca_file: /resources/ca.crt
+    relabel_configs:
+    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+      action: keep
+      regex: true
+    - target_label: __address__
+      replacement: 192.168.99.114:8443
+    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+      regex: ^$
+      replacement: http
+      target_label: __meta_kubernetes_service_annotation_prometheus_io_scheme
+    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_port]
+      regex: ^$
+      replacement: "8080"
+      target_label: __meta_kubernetes_service_annotation_prometheus_io_port
+    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+      regex: (.+)
+      replacement: ${1}
+      target_label: __metrics_path__
+    - source_labels:
+      - __meta_kubernetes_namespace
+      - __meta_kubernetes_service_annotation_prometheus_io_scheme
+      - __meta_kubernetes_service_name
+      - __meta_kubernetes_service_annotation_prometheus_io_port
+      - __metrics_path__
+      regex: (.+);(.+);(.+);(.+);(.+)
+      action: replace
+      target_label: __metrics_path__
+      replacement: /api/v1/namespaces/${1}/services/${2}:${3}:${4}/proxy${5}
+    - action: labelmap
+      regex: __meta_kubernetes_service_label_(.+)
+    - source_labels: [__meta_kubernetes_namespace]
+      action: replace
+      target_label: kubernetes_namespace
+    - source_labels: [__meta_kubernetes_service_name]
+      action: replace
+      target_label: kubernetes_service_name
+    - source_labels: [__meta_kubernetes_service_name]
+      target_label: instance
